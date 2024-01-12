@@ -21,6 +21,8 @@ def show_doubled_lane(polygon):
     """
     xs, ys = polygon[:, 0], polygon[:, 1]
     plt.plot(xs, ys, '--', color='grey')
+    # plt.plot(xs[0], ys[0], marker='', color = 'grey')
+    plt.plot(xs[-1], ys[-1], marker='$e$', color = 'grey')
 
 
 def show_traj(traj, type_):
@@ -29,6 +31,7 @@ def show_traj(traj, type_):
     returns:
     """
     plt.plot(traj[:, 0], traj[:, 1], color=color_dict[type_])
+    plt.plot(traj[:, 0][-1], traj[:, 1][-1], marker='o', color=color_dict[type_])
 
 
 def reconstract_polyline(features, traj_mask, lane_mask, add_len):

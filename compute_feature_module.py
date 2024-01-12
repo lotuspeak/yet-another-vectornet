@@ -22,26 +22,30 @@ import pickle
 if __name__ == "__main__":
     am = ArgoverseMap()
     for folder in os.listdir(DATA_DIR):
-        if not re.search(r'val', folder):
+        if not re.search(r'train', folder):
         # FIXME: modify the target folder by hand ('val|train|sample|test')
         # if not re.search(r'test', folder):
             continue
         print(f"folder: {folder}")
         afl = ArgoverseForecastingLoader(os.path.join(DATA_DIR, folder))
         norm_center_dict = {}
+        i = 0
         for name in tqdm(afl.seq_list):
             afl_ = afl.get(name)
             path, name = os.path.split(name)
             name, ext = os.path.splitext(name)
 
-            agent_feature, obj_feature_ls, lane_feature_ls, norm_center = compute_feature_for_one_seq(
-                afl_.seq_df, am, OBS_LEN, LANE_RADIUS, OBJ_RADIUS, viz=False, mode='nearby')
+            agent_feature, obj_feature_ls, lane_feature_ls, norm_center = compute_feature_for_one_seq(name,
+                afl_.seq_df, am, OBS_LEN, LANE_RADIUS, OBJ_RADIUS, viz=True, mode='nearby')
             df = encoding_features(
                 agent_feature, obj_feature_ls, lane_feature_ls)
             save_features(df, name, os.path.join(
                 INTERMEDIATE_DATA_DIR, f"{folder}_intermediate"))
 
             norm_center_dict[name] = norm_center
+            i += 1
+            if i > 100:
+                break
         
         with open(os.path.join(INTERMEDIATE_DATA_DIR, f"{folder}-norm_center_dict.pkl"), 'wb') as f:
             pickle.dump(norm_center_dict, f, pickle.HIGHEST_PROTOCOL)

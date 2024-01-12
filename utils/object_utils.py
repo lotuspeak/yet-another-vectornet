@@ -11,6 +11,7 @@ import pandas as pd
 from typing import List, Dict, Any
 import os
 from utils.config import VELOCITY_THRESHOLD, RAW_DATA_FORMAT, OBJ_RADIUS, EXIST_THRESHOLD
+from utils.common import *
 
 
 def compute_velocity(track_df: pd.DataFrame) -> List[float]:
@@ -124,12 +125,19 @@ def get_nearby_moving_obj_feature_ls(agent_df, traj_df, obs_len, seq_ts, norm_ce
     """
     obj_feature_ls = []
     query_x, query_y = agent_df[['X', 'Y']].values[obs_len-1]
+    
+    query_ts = agent_df['TIMESTAMP'].values[obs_len-1]
+    
     p0 = np.array([query_x, query_y])
     for track_id, remain_df in traj_df.groupby('TRACK_ID'):
         if remain_df['OBJECT_TYPE'].iloc[0] == 'AGENT':
             continue
 
         if len(remain_df) < EXIST_THRESHOLD or get_is_track_stationary(remain_df):
+            continue
+        
+        # skip 
+        if remain_df['TIMESTAMP'].iloc[-1] != query_ts:
             continue
 
         xys, ts = None, None
@@ -145,7 +153,8 @@ def get_nearby_moving_obj_feature_ls(agent_df, traj_df, obs_len, seq_ts, norm_ce
         if np.linalg.norm(p0 - p1) > OBJ_RADIUS:
             continue
 
-        xys -= norm_center  # normalize to last observed timestamp point of agent
+        # xys -= norm_center  # normalize to last observed timestamp point of agent
+        xys = shift_and_rotate(xys, norm_center[:2], norm_center[2])
         xys = np.hstack((xys[:-1], xys[1:]))
         
         ts = (ts[:-1] + ts[1:]) / 2

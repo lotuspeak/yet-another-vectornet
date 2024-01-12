@@ -3,7 +3,7 @@
 # @Time    : 2020-05-27 15:00
 # @Author  : Xiaoke Huang
 # @Email   : xiaokehuang@foxmail.com
-from utils.config import color_dict
+from utils.config import color_dict, VISUAL_PATH
 from argoverse.data_loading.argoverse_forecasting_loader import ArgoverseForecastingLoader
 from argoverse.map_representation.map_api import ArgoverseMap
 import matplotlib.pyplot as plt
@@ -16,10 +16,11 @@ from utils.lane_utils import get_nearby_lane_feature_ls, get_halluc_lane
 from utils.viz_utils import show_doubled_lane, show_traj
 from utils.agent_utils import get_agent_feature_ls
 from utils.viz_utils import *
+from utils.common import *
 import pdb
 
 
-def compute_feature_for_one_seq(traj_df: pd.DataFrame, am: ArgoverseMap, obs_len: int = 20, lane_radius: int = 5, obj_radius: int = 10, viz: bool = False, mode='rect', query_bbox=[-100, 100, -100, 100]) -> List[List]:
+def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMap, obs_len: int = 20, lane_radius: int = 5, obj_radius: int = 10, viz: bool = False, mode='rect', query_bbox=[-100, 100, -100, 100]) -> List[List]:
     """
     return lane & track features
     args:
@@ -31,7 +32,7 @@ def compute_feature_for_one_seq(traj_df: pd.DataFrame, am: ArgoverseMap, obs_len
             list of list of (doubled_track, object_type, timestamp, track_id)
         lane_feature_ls:
             list of list of lane a segment feature, formatted in [left_lane, right_lane, is_traffic_control, is_intersection, lane_id]
-        norm_center np.ndarray: (2, )
+        norm_center np.ndarray: (3, )
     """
     # normalize timestamps
     traj_df['TIMESTAMP'] -= np.min(traj_df['TIMESTAMP'].values)
@@ -46,10 +47,19 @@ def compute_feature_for_one_seq(traj_df: pd.DataFrame, am: ArgoverseMap, obs_len
     for obj_type, remain_df in traj_df.groupby('OBJECT_TYPE'):
         if obj_type == 'AGENT':
             agent_df = remain_df
-            start_x, start_y = agent_df[['X', 'Y']].values[0]
-            agent_x_end, agent_y_end = agent_df[['X', 'Y']].values[-1]
+            # start_x, start_y = agent_df[['X', 'Y']].values[0]
+            # agent_x_end, agent_y_end = agent_df[['X', 'Y']].values[-1]
+            
             query_x, query_y = agent_df[['X', 'Y']].values[obs_len-1]
-            norm_center = np.array([query_x, query_y])
+            query_x_last, query_y_last = agent_df[['X', 'Y']].values[obs_len-2]
+            
+            vel_heading = np.arctan2(query_y - query_y_last, query_x - query_x_last)
+            norm_center = np.array([query_x, query_y, vel_heading])
+            # shift and rotate
+            start_x, start_y = shift_and_rotate(agent_df[['X', 'Y']].values[0], norm_center[:2], norm_center[2])
+            
+            agent_x_end, agent_y_end = shift_and_rotate(agent_df[['X', 'Y']].values[-1], norm_center[:2], norm_center[2])
+            
             break
         else:
             raise ValueError(f"cannot find 'agent' object type")
@@ -78,6 +88,8 @@ def compute_feature_for_one_seq(traj_df: pd.DataFrame, am: ArgoverseMap, obs_len
 
     # vis
     if viz:
+        plt.figure(figsize=(20,16))
+        plt.grid()
         for features in lane_feature_ls:
             show_doubled_lane(
                 np.vstack((features[0][:, :2], features[0][-1, 3:5])))
@@ -89,12 +101,13 @@ def compute_feature_for_one_seq(traj_df: pd.DataFrame, am: ArgoverseMap, obs_len
         show_traj(np.vstack(
             (agent_feature[0][:, :2], agent_feature[0][-1, 2:])), agent_feature[1])
 
-        plt.plot(agent_x_end - query_x, agent_y_end - query_y, 'o',
+        plt.plot(agent_x_end, agent_y_end, 'o',
                  color=color_dict['AGENT'], markersize=7)
         plt.plot(0, 0, 'x', color='blue', markersize=4)
-        plt.plot(start_x-query_x, start_y-query_y,
+        plt.plot(start_x, start_y,
                  'x', color='blue', markersize=4)
-        plt.show()
+        # plt.show()
+        plt.savefig(os.path.join(VISUAL_PATH, f'{name}.png'))
 
     return [agent_feature, obj_feature_ls, lane_feature_ls, norm_center]
 

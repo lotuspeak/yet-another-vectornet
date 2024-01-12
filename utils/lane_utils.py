@@ -12,7 +12,7 @@ import pandas as pd
 from typing import List, Dict, Any
 import os
 from utils.config import LANE_WIDTH
-
+from utils.common import *
 
 def get_halluc_lane(centerlane, city_name):
     """
@@ -85,7 +85,9 @@ def get_nearby_lane_feature_ls(am, agent_df, obs_len, city_name, lane_radius, no
 
             centerlane = am.get_lane_segment_centerline(lane_id, city_name)
             # normalize to last observed timestamp point of agent
-            centerlane[:, :2] -= norm_center
+            # centerlane[:, :2] -= norm_center
+            centerlane[:, :2] = shift_and_rotate(centerlane[:, :2], norm_center[:2], norm_center[2])
+
             halluc_lane_1, halluc_lane_2 = get_halluc_lane(
                 centerlane, city_name)
 
@@ -117,7 +119,8 @@ def get_nearby_lane_feature_ls(am, agent_df, obs_len, city_name, lane_radius, no
 
             centerlane = am.get_lane_segment_centerline(lane_id, city_name)
             # normalize to last observed timestamp point of agent
-            centerlane[:, :2] -= norm_center
+            # centerlane[:, :2] -= norm_center
+            centerlane[:, :2] = shift_and_rotate(centerlane[:, :2], norm_center[:2], norm_center[2])
             halluc_lane_1, halluc_lane_2 = get_halluc_lane(
                 centerlane, city_name)
 

@@ -15,20 +15,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdb
 import os
-from dataset import GraphDataset
+from dataset import *
 from torch_geometric.data import DataLoader
 from utils.eval import get_eval_metric_results
 from tqdm import tqdm
 import time
 from typing import List
+from utils.config import DATA_DIR, LANE_RADIUS, OBJ_RADIUS, OBS_LEN, INTERMEDIATE_DATA_DIR
 
 # %%
-TRAIN_DIR = os.path.join('interm_data', 'train_intermediate')
-VAL_DIR = os.path.join('interm_data', 'val_intermediate')
+TRAIN_DIR = os.path.join(INTERMEDIATE_DATA_DIR, 'train_intermediate')
+VAL_DIR = os.path.join(INTERMEDIATE_DATA_DIR, 'val_intermediate')
 SEED = 13
 epochs = 50
-device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 batch_size = 4096
+batch_size = 256
 decay_lr_factor = 0.3
 decay_lr_every = 10
 lr = 0.001
@@ -37,9 +39,9 @@ show_every = 10
 val_every = 5
 small_dataset = False
 end_epoch = 0
-save_dir = 'trained_params'
+save_dir = 'trained_params_bs256_rotated'
 best_minade = float('inf')
-date = f"200630.epochs{epochs}.lr_decay{decay_lr_factor}.decay_every{decay_lr_every}.lr{lr}"
+date = f"240115.epochs{epochs}.lr_decay{decay_lr_factor}.decay_every{decay_lr_every}.lr{lr}"
 global_step = 0
 # checkpoint_dir = os.path.join('trained_params', 'epoch_6.valminade_3.796.pth')
 checkpoint_dir = None

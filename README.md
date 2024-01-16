@@ -108,6 +108,66 @@ Submission ID of the repo: @xkhuang
 | results in paper | 1.66  | 3.67  |
 | epoch_24.valminade_2.637.200624.xkhuang.pth                  | 2.637        |              |
 
+#### no rotated
+
+    bs_1024_r1.log:minADE:3.518603, minFDE:7.254115, MissRate:0.929165
+    bs_1024_r1.log:minADE:2.910138, minFDE:6.089996, MissRate:0.892759
+    bs_1024_r1.log:minADE:2.477032, minFDE:5.303828, MissRate:0.801834
+    bs_1024_r1.log:minADE:2.362716, minFDE:5.088229, MissRate:0.793119
+    bs_1024_r1.log:minADE:2.277032, minFDE:4.929060, MissRate:0.762921
+    bs_1024_r1.log:minADE:2.260361, minFDE:4.891617, MissRate:0.758614
+    bs_1024_r1.log:minADE:2.258971, minFDE:4.896843, MissRate:0.761451
+    bs_1024_r1.log:minADE:2.257784, minFDE:4.897358, MissRate:0.758994
+
+    bs_256_r3_1.log:minADE:2.621358, minFDE:5.598257, MissRate:0.848906
+    bs_256_r3_1.log:minADE:2.515848, minFDE:5.271922, MissRate:0.838924
+    bs_256_r3_1.log:minADE:2.111074, minFDE:4.642370, MissRate:0.758816
+    bs_256_r3_1.log:minADE:2.063809, minFDE:4.529336, MissRate:0.732950
+
+    bs_256_r3_1.log:minADE:2.669239, minFDE:5.682845, MissRate:0.847411
+    bs_256_r3_1.log:minADE:2.467033, minFDE:5.242740, MissRate:0.850527
+    bs_256_r3_1.log:minADE:2.108477, minFDE:4.659002, MissRate:0.750887
+    bs_256_r3_1.log:minADE:2.060997, minFDE:4.562815, MissRate:0.730721
+    bs_256_r3_1.log:minADE:2.065531, minFDE:4.581269, MissRate:0.744730
+    bs_256_r3_1.log:minADE:2.090754, minFDE:4.624962, MissRate:0.760539
+    bs_256_r3_1.log:minADE:2.077855, minFDE:4.608405, MissRate:0.755472
+    bs_256_r3_1.log:minADE:2.066780, minFDE:4.587068, MissRate:0.749240
+    bs_256_r3_1.log:minADE:2.068860, minFDE:4.592795, MissRate:0.749899
+    bs_256_r3_1.log:minADE:2.082567, minFDE:4.623325, MissRate:0.755472
+    
+    bs_256_r3.log:minADE:2.548336, minFDE:5.479505, MissRate:0.831678
+    bs_256_r3.log:minADE:2.496875, minFDE:5.243385, MissRate:0.836390
+    bs_256_r3.log:minADE:2.149730, minFDE:4.702978, MissRate:0.759120
+    bs_256_r3.log:minADE:2.071554, minFDE:4.580588, MissRate:0.732798
+    bs_256_r3.log:minADE:2.066520, minFDE:4.548301, MissRate:0.735737
+    bs_256_r3.log:minADE:2.067908, minFDE:4.574391, MissRate:0.746960
+    bs_256_r3.log:minADE:2.058419, minFDE:4.553373, MissRate:0.740145
+    bs_256_r3.log:minADE:2.050795, minFDE:4.538275, MissRate:0.737535
+
+
+#### rotated bs=256
+
+    EXIST_THRESHOLD = (50)
+    # index of the sorted velocity to look at, to call it as stationary
+    STATIONARY_THRESHOLD = (13)
+    color_dict = {"AGENT": "#d30000", "OTHERS": "#00d000", "AV": "#0000f2"}
+    LANE_RADIUS = 30
+    OBJ_RADIUS = 30
+
+    minADE:2.111391, minFDE:4.654815, MissRate:0.753521 epoch 4
+    minADE:2.011096, minFDE:4.493858, MissRate:0.737637 epoch 9
+    minADE:1.842005, minFDE:4.112180, MissRate:0.691782 
+    minADE:1.812565, minFDE:4.046578, MissRate:0.673718
+    minADE:1.820584, minFDE:4.027604, MissRate:0.685093
+    minADE:1.794450, minFDE:3.983025, MissRate:0.679393
+    minADE:1.794970, minFDE:3.997268, MissRate:0.682864
+    minADE:1.785888, minFDE:3.975405, MissRate:0.680761
+    minADE:1.791395, minFDE:3.979677, MissRate:0.681166 epoch 44
+    minADE:1.809420, minFDE:4.012702, MissRate:0.691123
+
+#### 
+
+
 ### Result on test
 
 | model params                                                 | minADE (K=1) | minFDE (K=1) |

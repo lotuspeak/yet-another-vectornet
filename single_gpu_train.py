@@ -100,7 +100,7 @@ if __name__ == "__main__":
     # overfit the small dataset
     model.train()
     for epoch in range(epochs):
-        print(f"start training at epoch:{epoch}")
+        print(f"{time.ctime()} start training at epoch:{epoch}")
         acc_loss = .0
         num_samples = 1
         start_tic = time.time()
@@ -120,16 +120,16 @@ if __name__ == "__main__":
             optimizer.step()
             global_step += 1
             if (global_step + 1) % show_every == 0:
-                print( f"epoch {epoch} step {global_step}： loss:{loss.item():3f}, lr:{optimizer.state_dict()['param_groups'][0]['lr']: .6f}, time:{time.time() - start_tic: 4f}sec")
+                print( f"{time.ctime()} epoch {epoch} step {global_step}： loss:{loss.item():3f}, lr:{optimizer.state_dict()['param_groups'][0]['lr']: .6f}, time:{time.time() - start_tic: 4f}sec")
         scheduler.step()
         print(
             f"finished epoch {epoch}: loss:{acc_loss / num_samples:.3f}, lr:{optimizer.state_dict()['param_groups'][0]['lr']: .6f}, time:{time.time() - start_tic: 4f}sec")
         
         if (epoch+1) % val_every == 0 and (not epoch < end_epoch):
-            print("eval as epoch:{epoch}")
+            print(f"{time.ctime()} eval as epoch:{epoch}")
             metrics = get_eval_metric_results(model, val_loader, device, out_channels, max_n_guesses, horizon, miss_threshold)
             curr_minade = metrics["minADE"]
-            print(f"minADE:{metrics['minADE']:3f}, minFDE:{metrics['minFDE']:3f}, MissRate:{metrics['MR']:3f}")
+            print(f"{time.ctime()} minADE:{metrics['minADE']:3f}, minFDE:{metrics['minFDE']:3f}, MissRate:{metrics['MR']:3f}")
 
             if curr_minade < best_minade:
                 best_minade = curr_minade

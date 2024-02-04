@@ -118,7 +118,7 @@ def pad_track(
     return padded_track_array
 
 
-def get_nearby_moving_obj_feature_ls(agent_df, traj_df, obs_len, seq_ts, norm_center):
+def get_nearby_moving_obj_feature_ls(agent_df, traj_df, obs_len, seq_ts, norm_center, target_track_id):
     """
     args:
     returns: list of list, (doubled_track, object_type, timestamp, track_id)
@@ -130,7 +130,9 @@ def get_nearby_moving_obj_feature_ls(agent_df, traj_df, obs_len, seq_ts, norm_ce
     
     p0 = np.array([query_x, query_y])
     for track_id, remain_df in traj_df.groupby('TRACK_ID'):
-        if remain_df['OBJECT_TYPE'].iloc[0] == 'AGENT':
+        # if remain_df['OBJECT_TYPE'].iloc[0] == 'AGENT':
+            # continue
+        if track_id == target_track_id:
             continue
 
         if len(remain_df) < EXIST_THRESHOLD or get_is_track_stationary(remain_df):

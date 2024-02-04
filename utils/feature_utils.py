@@ -18,9 +18,19 @@ from utils.agent_utils import get_agent_feature_ls
 from utils.viz_utils import *
 from utils.common import *
 import pdb
+import collections
+from utils.config import *
 
 
-def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMap, obs_len: int = 20, lane_radius: int = 5, obj_radius: int = 10, viz: bool = False, mode='rect', query_bbox=[-100, 100, -100, 100]) -> List[List]:
+def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMap,
+                                obs_len: int = 20,
+                                lane_radius: int = 5,
+                                obj_radius: int = 10,
+                                viz: bool = False,
+                                mode='rect',
+                                query_bbox=[-100, 100, -100, 100],
+                                add_others: bool = False,
+                                add_av: bool = False) -> List[List[List]]:
     """
     return lane & track features
     args:
@@ -34,6 +44,8 @@ def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMa
             list of list of lane a segment feature, formatted in [left_lane, right_lane, is_traffic_control, is_intersection, lane_id]
         norm_center np.ndarray: (3, )
     """
+    res = []
+    agent_track_id = None
     # normalize timestamps
     traj_df['TIMESTAMP'] -= np.min(traj_df['TIMESTAMP'].values)
     seq_ts = np.unique(traj_df['TIMESTAMP'].values)
@@ -43,9 +55,14 @@ def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMa
     agent_df = None
     agent_x_end, agent_y_end, start_x, start_y, query_x, query_y, norm_center = [
         None] * 7
+    others = collections.defaultdict(dict)
     # agent traj & its start/end point
-    for obj_type, remain_df in traj_df.groupby('OBJECT_TYPE'):
+    # for obj_type, remain_df in traj_df.groupby('OBJECT_TYPE'):
+    
+    for track_id, remain_df in traj_df.groupby('TRACK_ID'):
+        obj_type = remain_df['OBJECT_TYPE'].iloc[0]
         if obj_type == 'AGENT':
+            agent_track_id = track_id
             agent_df = remain_df
             # start_x, start_y = agent_df[['X', 'Y']].values[0]
             # agent_x_end, agent_y_end = agent_df[['X', 'Y']].values[-1]
@@ -61,8 +78,23 @@ def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMa
             agent_x_end, agent_y_end = shift_and_rotate(agent_df[['X', 'Y']].values[-1], norm_center[:2], norm_center[2])
             
             break
-        else:
-            raise ValueError(f"cannot find 'agent' object type")
+        elif obj_type == 'OTHERS':
+            if not add_others:
+                continue
+            if remain_df.shape[0] == 50:
+                other_query_x, other_query_y = remain_df[['X', 'Y']].values[obs_len-1]
+                other_query_x_last, other_query_y_last = remain_df[['X', 'Y']].values[obs_len-2]
+                
+                velocity = np.hypot(other_query_x - other_query_x_last, other_query_y - other_query_y_last) / (seq_ts[obs_len-1] - seq_ts[obs_len-2])
+                if velocity < VELOCITY_THRESHOLD:
+                    continue
+                
+                others[track_id]['df'] = remain_df
+                vel_heading = np.arctan2(other_query_y - other_query_y_last, other_query_x - other_query_x_last)
+                other_norm_center = np.array([other_query_x, other_query_y, vel_heading])
+                others[track_id]['norm_center'] = other_norm_center
+
+            # raise ValueError(f"cannot find 'agent' object type")
 
     # prune points after "obs_len" timestamp
     # [FIXED] test set length is only `obs_len`
@@ -76,16 +108,29 @@ def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMa
     # FIXME: nearby or rect?
     # lane_feature_ls = get_nearby_lane_feature_ls(
     #     am, agent_df, obs_len, city_name, lane_radius, norm_center)
+    
+    assert agent_track_id is not None
     lane_feature_ls = get_nearby_lane_feature_ls(
         am, agent_df, obs_len, city_name, lane_radius, norm_center, mode=mode, query_bbox=query_bbox)
     # pdb.set_trace()
 
     # search nearby moving objects from the last observed point of agent
     obj_feature_ls = get_nearby_moving_obj_feature_ls(
-        agent_df, traj_df, obs_len, seq_ts, norm_center)
+        agent_df, traj_df, obs_len, seq_ts, norm_center, agent_track_id)
     # get agent features
     agent_feature = get_agent_feature_ls(agent_df, obs_len, norm_center)
-
+    res.append([agent_feature, obj_feature_ls, lane_feature_ls, norm_center, agent_track_id])
+    
+    if add_others:
+        for track_id, track_info in others.items():
+            other_lane_feature_ls = get_nearby_lane_feature_ls(
+                am, track_info['df'], obs_len, city_name, lane_radius, track_info['norm_center'], mode=mode, query_bbox=query_bbox)
+            # search nearby moving objects from the last observed point of agent
+            other_obj_feature_ls = get_nearby_moving_obj_feature_ls(
+                track_info['df'], traj_df, obs_len, seq_ts, track_info['norm_center'], track_id)
+            # get agent features
+            other_feature = get_agent_feature_ls(track_info['df'], obs_len, track_info['norm_center'])
+            res.append([other_feature, other_obj_feature_ls, other_lane_feature_ls, track_info['norm_center'], track_id])
     # vis
     if viz:
         plt.figure(figsize=(20,16))
@@ -109,7 +154,8 @@ def compute_feature_for_one_seq(name:str, traj_df: pd.DataFrame, am: ArgoverseMa
         # plt.show()
         plt.savefig(os.path.join(VISUAL_PATH, f'{name}.png'))
 
-    return [agent_feature, obj_feature_ls, lane_feature_ls, norm_center]
+    # return [agent_feature, obj_feature_ls, lane_feature_ls, norm_center]
+    return res
 
 
 def trans_gt_offset_format(gt):

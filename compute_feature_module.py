@@ -30,22 +30,29 @@ if __name__ == "__main__":
         afl = ArgoverseForecastingLoader(os.path.join(DATA_DIR, folder))
         norm_center_dict = {}
         i = 0
+        if folder == 'train':
+            add_others = True
         for name in tqdm(afl.seq_list):
             afl_ = afl.get(name)
             path, name = os.path.split(name)
             name, ext = os.path.splitext(name)
 
-            agent_feature, obj_feature_ls, lane_feature_ls, norm_center = compute_feature_for_one_seq(name,
-                afl_.seq_df, am, OBS_LEN, LANE_RADIUS, OBJ_RADIUS, viz=True, mode='nearby')
-            df = encoding_features(
-                agent_feature, obj_feature_ls, lane_feature_ls)
-            save_features(df, name, os.path.join(
-                INTERMEDIATE_DATA_DIR, f"{folder}_intermediate"))
+            # agent_feature, obj_feature_ls, lane_feature_ls, norm_center = compute_feature_for_one_seq(name,
+                # afl_.seq_df, am, OBS_LEN, LANE_RADIUS, OBJ_RADIUS, viz=False, mode='nearby')
+            feature_ls = compute_feature_for_one_seq(name,
+                afl_.seq_df, am, OBS_LEN, LANE_RADIUS, OBJ_RADIUS, viz=False, mode='nearby', add_others=add_others)
+            for feature in feature_ls:
+                agent_feature, obj_feature_ls, lane_feature_ls, norm_center, track_id = feature
+                df = encoding_features(
+                    agent_feature, obj_feature_ls, lane_feature_ls)
+                track_name = name + '_' + track_id 
+                save_features(df, track_name, os.path.join(
+                    INTERMEDIATE_DATA_DIR, f"{folder}_intermediate"))
 
-            norm_center_dict[name] = norm_center
+                norm_center_dict[track_name] = norm_center
             i += 1
-            if i > 100:
-                break
+            # if i > 10:
+            #     break
         
         with open(os.path.join(INTERMEDIATE_DATA_DIR, f"{folder}-norm_center_dict.pkl"), 'wb') as f:
             pickle.dump(norm_center_dict, f, pickle.HIGHEST_PROTOCOL)
